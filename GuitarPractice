@@ -107,8 +107,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	int maxSimultaneouslyPicked = rand() % (sequenceLength + 1); // variable, setting
 	int simulPickFreq = sequenceLength - 6; // limit 0 - sequenceLength
 
-	const int length = sequenceLength + maxSimultaneouslyPicked;
-
 	// Hammer On
 
 	bool hammerOn = true;
@@ -127,10 +125,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 	int lastStringNumber = 1;
 
+	int actualSimulPicked = 0;
+
 	srand(time(NULL));
 
 	// Generate Sequence
-	for (int i = 0; i <= (sequenceLength - 1) + maxSimultaneouslyPicked; ++i) {
+	for (int i = 0; i <= (sequenceLength - 1) + actualSimulPicked; ++i) {
 
 		currentGenerated += 1;
 
@@ -156,7 +156,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Simultaneous Picking
 
 		if (currentSimulPicked == false) {
-			if (rand() % sequenceLength < simulPickFreq and currentSimultaneouslyPicked < maxSimultaneouslyPicked and currentGenerated < length) {
+			if (rand() % sequenceLength < simulPickFreq and currentSimultaneouslyPicked < maxSimultaneouslyPicked and currentGenerated < sequenceLength + actualSimulPicked) {
+				actualSimulPicked += 1;
 				currentSimulPicked = true;
 				currentSimultaneouslyPicked += 1;
 				str = str + "(";
@@ -209,10 +210,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				str = str + "H";
 			}
 
-			if (currentGenerated < length) {
+			if (currentGenerated < (sequenceLength - 1) + actualSimulPicked + 1) {
 				str = str + " - ";
 			}
-
+			else {
+				str = str + " ";
+			}
 		}
 
 	}
