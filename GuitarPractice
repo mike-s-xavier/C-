@@ -129,29 +129,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 	srand(time(NULL));
 
+	// Chord
+	if (rand() % 100 > 70) {
+		chordNumber = -1;
+	}
+	else {
+		chordNumber = rand() % 12;
+	}
+
+	string chord = "";
+
+	if (chordNumber != -1)	{
+		chord = chords[chordNumber];
+	}
+
+	if (chordNumber != lastChordNumber and currentSimulPicked == false) {
+		str = str + chord + ": ";
+	}
+
+	lastChordNumber = chordNumber;
+
 	// Generate Sequence
 	for (int i = 0; i <= (sequenceLength - 1) + actualSimulPicked; ++i) {
 
 		currentGenerated += 1;
-
-		// Chord
-
-		if (currentGenerated > 1) {
-			if (rand() % 100 > 70) {
-				chordNumber = rand() % 12;
-			}
-		}
-		else {
-			chordNumber = rand() % 12;
-		}
-
-		string chord = chords[chordNumber];
-
-		if (chordNumber != lastChordNumber and currentSimulPicked == false) {
-			str = str + chord + ": ";
-		}
-
-		lastChordNumber = chordNumber;
 
 		// Simultaneous Picking
 
@@ -245,6 +246,3 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	return 0;
 
 }
-
-
-
