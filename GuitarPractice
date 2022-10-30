@@ -1,0 +1,247 @@
+#include <windows.h>
+#include <stdlib.h>
+#include <string.h>
+#include <tchar.h>
+#include <random>
+#include <iostream>
+#include <sstream>  
+#include <iterator>
+#include <list>
+#include <time.h>
+
+using namespace std;
+
+static TCHAR szWindowClass[] = _T("GuitarPracticeProject");
+static TCHAR szTitle[] = _T("Guitar Practice");
+HINSTANCE hInst;
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdline, _In_ int nCmdShow) {
+
+	WNDCLASSEX wcex;
+
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.style = CS_HREDRAW | CS_VREDRAW; 
+	wcex.lpfnWndProc = WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = hInstance;
+	wcex.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszMenuName = NULL;
+	wcex.lpszClassName = szWindowClass;
+	wcex.hIconSm = LoadIcon(wcex.hInstance, IDI_APPLICATION);
+
+	if (!RegisterClassEx(&wcex))
+	{
+		MessageBox(NULL,
+			_T("Call to RegisterClassEx failed!"),
+			_T("Windows Desktop Guided Tour"),
+			NULL);
+
+		return 1;
+	}
+
+	hInst = hInstance;
+
+	HWND hWnd = CreateWindow(
+		szWindowClass,
+		szTitle,
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		700, 400,
+		NULL,
+		NULL,
+		hInstance,
+		NULL
+	);
+	if (!hWnd)
+	{
+		MessageBox(NULL,
+			_T("Call to CreateWindow failed!"),
+			_T("Windows Desktop"),
+			NULL);
+
+		return 1;
+	}
+	ShowWindow(hWnd,
+		nCmdShow);
+	UpdateWindow(hWnd);
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	return (int)msg.wParam;
+
+
+}
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+	PAINTSTRUCT ps;
+	HDC hdc;
+
+	// Settings
+
+	bool picking = true;
+	bool simulPick = true;
+	bool strumming = false;
+
+	string tuning =  "";
+	string timing = "";
+
+	string chords[12] = {"Em", "E", "Am", "C", "A", "G", "D", "Dm", "E7", "D7", "A7", "C7"};
+
+	// Sequence Length(s)
+	int sequenceLength = 7;
+	
+	// Number of Linked Sequences
+	int numberLinks = 1;
+
+	// Max Simultaneously Picked
+
+	int maxSimultaneouslyPicked = rand() % (sequenceLength + 1); // variable, setting
+	int simulPickFreq = sequenceLength - 6; // limit 0 - sequenceLength
+
+	const int length = sequenceLength + maxSimultaneouslyPicked;
+
+	// Hammer On
+
+	bool hammerOn = true;
+	int hammerFreq = sequenceLength - 6; // limit 0 - sequencelength
+
+	// General 
+	string str;
+	int currentGenerated = 0;
+	int currentSimultaneouslyPicked = 0;
+
+	bool currentSimulPicked = false;
+	bool simulPickPairing = false;
+
+	int chordNumber = 1;
+	int lastChordNumber = 1;
+
+	int lastStringNumber = 1;
+
+	srand(time(NULL));
+
+	// Generate Sequence
+	for (int i = 0; i <= (sequenceLength - 1) + maxSimultaneouslyPicked; ++i) {
+
+		currentGenerated += 1;
+
+		// Chord
+
+		if (currentGenerated > 1) {
+			if (rand() % 100 > 70) {
+				chordNumber = rand() % 12;
+			}
+		}
+		else {
+			chordNumber = rand() % 12;
+		}
+
+		string chord = chords[chordNumber];
+
+		if (chordNumber != lastChordNumber and currentSimulPicked == false) {
+			str = str + chord + ": ";
+		}
+
+		lastChordNumber = chordNumber;
+
+		// Simultaneous Picking
+
+		if (currentSimulPicked == false) {
+			if (rand() % sequenceLength < simulPickFreq and currentSimultaneouslyPicked < maxSimultaneouslyPicked and currentGenerated < length) {
+				currentSimulPicked = true;
+				currentSimultaneouslyPicked += 1;
+				str = str + "(";
+			}
+		}
+		else {
+			str = str + "+";
+		}
+
+		// Strings
+
+		int newInt = 1 + rand() % 6;
+		string newStr = to_string(newInt);
+
+		if (currentSimulPicked == true and simulPickPairing == true) {
+			if (newInt == lastStringNumber) {
+				int acceptableStrings[5] = { };
+				int h = 0;
+				for (int i = 1; i <= 6; ++i) {
+					if (i != lastStringNumber) {
+						acceptableStrings[h] = i; 
+						h += 1;
+					}
+				}
+				newInt = acceptableStrings[rand() % 5];
+				newStr = to_string(newInt);
+			}
+		}
+
+		str = str + newStr;
+
+		lastStringNumber = newInt;
+
+		if (currentSimulPicked == true and simulPickPairing == true) {		
+			
+			simulPickPairing = false;
+			currentSimulPicked = false;
+			str = str + ")";
+		}
+		else if (currentSimulPicked == true and simulPickPairing == false) {
+			simulPickPairing = true;
+		}
+
+		// Details
+
+		if (currentSimulPicked == false) {
+
+			// Hammer On
+			if (rand() % sequenceLength < hammerFreq) {
+				str = str + "H";
+			}
+
+			if (currentGenerated < length) {
+				str = str + " - ";
+			}
+
+		}
+
+	}
+
+	std::wstring stemp = std::wstring(str.begin(), str.end());
+	LPCWSTR sw = stemp.c_str();
+
+	switch (message)
+	{
+	case WM_PAINT:
+		hdc = BeginPaint(hWnd, &ps);
+
+		TextOut(hdc,
+			5, 5,
+			sw, _tcslen(sw));
+
+		EndPaint(hWnd, &ps);
+		break;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+		break;
+	}
+
+	return 0;
+
+}
+
+
+
