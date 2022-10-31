@@ -80,16 +80,43 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 }
 
+/*
+LRESULT CALLBACK Picking() {
+
+}
+
+LRESULT CALLBACK Strumming() {
+
+}
+
+LRESULT CALLBACK PickingAndStrumming() {
+
+}
+*/
+
+unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
+{
+	a = a - b;  a = a - c;  a = a ^ (c >> 13);
+	b = b - c;  b = b - a;  b = b ^ (a << 8);
+	c = c - a;  c = c - b;  c = c ^ (b >> 13);
+	a = a - b;  a = a - c;  a = a ^ (c >> 12);
+	b = b - c;  b = b - a;  b = b ^ (a << 16);
+	c = c - a;  c = c - b;  c = c ^ (b >> 5);
+	a = a - b;  a = a - c;  a = a ^ (c >> 3);
+	b = b - c;  b = b - a;  b = b ^ (a << 10);
+	c = c - a;  c = c - b;  c = c ^ (b >> 15);
+	return c;
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 	PAINTSTRUCT ps;
-	HDC hdc;
 
 	// Settings
 
 	bool picking = true;
 	bool simulPick = true;
-	bool strumming = false;
+	bool strumming = true;
 
 	string tuning =  "";
 	string timing = "";
@@ -100,7 +127,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	int sequenceLength = 7;
 	
 	// Number of Linked Sequences
-	int numberLinks = 1;
+	int numberLinks = 10;
+	string links[10]; // must be the same length as numberlinks value
 
 	// Max Simultaneously Picked
 
@@ -112,128 +140,161 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	bool hammerOn = true;
 	int hammerFreq = sequenceLength - 6; // limit 0 - sequencelength
 
-	// General 
-	string str;
-	int currentGenerated = 0;
-	int currentSimultaneouslyPicked = 0;
+	
+	// Generate Sequence(s)
 
-	bool currentSimulPicked = false;
-	bool simulPickPairing = false;
+	unsigned long seed = mix(clock(), time(NULL), GetProcessId(hWnd));
 
-	int chordNumber = 1;
-	int lastChordNumber = 1;
+	srand(seed);
 
-	int lastStringNumber = 1;
+	for (int k = 1; k <= numberLinks; ++k) {
 
-	int actualSimulPicked = 0;
+		// General 
+		string str;
+		int currentGenerated = 0;
+		int currentSimultaneouslyPicked = 0;
 
-	srand(time(NULL));
+		bool currentSimulPicked = false;
+		bool simulPickPairing = false;
 
-	// Chord
-	if (rand() % 100 > 70) {
-		chordNumber = -1;
-	}
-	else {
-		chordNumber = rand() % 12;
-	}
+		int chordNumber = 1;
+		int lastChordNumber = 1;
 
-	string chord = "";
+		int lastStringNumber = 1;
 
-	if (chordNumber != -1)	{
-		chord = chords[chordNumber];
-	}
+		int actualSimulPicked = 0;
 
-	if (chordNumber != lastChordNumber and currentSimulPicked == false) {
-		str = str + chord + ": ";
-	}
-
-	lastChordNumber = chordNumber;
-
-	// Generate Sequence
-	for (int i = 0; i <= (sequenceLength - 1) + actualSimulPicked; ++i) {
-
-		currentGenerated += 1;
-
-		// Simultaneous Picking
-
-		if (currentSimulPicked == false) {
-			if (rand() % sequenceLength < simulPickFreq and currentSimultaneouslyPicked < maxSimultaneouslyPicked and currentGenerated < sequenceLength + actualSimulPicked) {
-				actualSimulPicked += 1;
-				currentSimulPicked = true;
-				currentSimultaneouslyPicked += 1;
-				str = str + "(";
-			}
+		// Chord
+		if (rand() % 100 > 70) {
+			chordNumber = -1;
 		}
 		else {
-			str = str + "+";
+			chordNumber = rand() % 12;
 		}
 
-		// Strings
+		string chord = "";
 
-		int newInt = 1 + rand() % 6;
-		string newStr = to_string(newInt);
+		if (chordNumber != -1) {
+			chord = chords[chordNumber];
+		}
 
-		if (currentSimulPicked == true and simulPickPairing == true) {
-			if (newInt == lastStringNumber) {
-				int acceptableStrings[5] = { };
-				int h = 0;
-				for (int i = 1; i <= 6; ++i) {
-					if (i != lastStringNumber) {
-						acceptableStrings[h] = i; 
-						h += 1;
-					}
+		if (chordNumber != lastChordNumber and currentSimulPicked == false) {
+			if (chord != "") {
+				str = str + chord + ": ";
+			}
+		}
+
+		lastChordNumber = chordNumber;
+
+		for (int i = 0; i <= (sequenceLength - 1) + actualSimulPicked; ++i) {
+
+			currentGenerated += 1;
+
+			// Simultaneous Picking
+
+			if (currentSimulPicked == false) {
+				if (rand() % sequenceLength < simulPickFreq and currentSimultaneouslyPicked < maxSimultaneouslyPicked and currentGenerated < sequenceLength + actualSimulPicked) {
+					actualSimulPicked += 1;
+					currentSimulPicked = true;
+					currentSimultaneouslyPicked += 1;
+					str = str + "(";
 				}
-				newInt = acceptableStrings[rand() % 5];
-				newStr = to_string(newInt);
-			}
-		}
-
-		str = str + newStr;
-
-		lastStringNumber = newInt;
-
-		if (currentSimulPicked == true and simulPickPairing == true) {		
-			
-			simulPickPairing = false;
-			currentSimulPicked = false;
-			str = str + ")";
-		}
-		else if (currentSimulPicked == true and simulPickPairing == false) {
-			simulPickPairing = true;
-		}
-
-		// Details
-
-		if (currentSimulPicked == false) {
-
-			// Hammer On
-			if (rand() % sequenceLength < hammerFreq) {
-				str = str + "H";
-			}
-
-			if (currentGenerated < (sequenceLength - 1) + actualSimulPicked + 1) {
-				str = str + " - ";
 			}
 			else {
-				str = str + " ";
+				str = str + "+";
 			}
+
+			// Strings
+
+			int newInt = 1 + rand() % 6;
+			string newStr = to_string(newInt);
+
+			if (currentSimulPicked == true and simulPickPairing == true) {
+				if (newInt == lastStringNumber) {
+					int acceptableStrings[5] = { };
+					int h = 0;
+					for (int i = 1; i <= 6; ++i) {
+						if (i != lastStringNumber) {
+							acceptableStrings[h] = i;
+							h += 1;
+						}
+					}
+					newInt = acceptableStrings[rand() % 5];
+					newStr = to_string(newInt);
+				}
+			}
+
+			str = str + newStr;
+
+			lastStringNumber = newInt;
+
+			if (currentSimulPicked == true and simulPickPairing == true) {
+
+				simulPickPairing = false;
+				currentSimulPicked = false;
+				str = str + ")";
+			}
+			else if (currentSimulPicked == true and simulPickPairing == false) {
+				simulPickPairing = true;
+			}
+
+			// Details
+
+			if (currentSimulPicked == false) {
+
+				// Hammer On
+				if (rand() % sequenceLength < hammerFreq) {
+					str = str + "H";
+				}
+
+				if (currentGenerated < (sequenceLength - 1) + actualSimulPicked + 1) {
+					str = str + " - ";
+				}
+				else {
+					str = str + " ";
+				}
+			}
+
 		}
+	
+		links[k - 1] = str;
 
 	}
 
-	std::wstring stemp = std::wstring(str.begin(), str.end());
-	LPCWSTR sw = stemp.c_str();
+	HDC hdc;
+
 
 	switch (message)
 	{
 	case WM_PAINT:
+
 		hdc = BeginPaint(hWnd, &ps);
 
-		TextOut(hdc,
-			5, 5,
-			sw, _tcslen(sw));
 
-		EndPaint(hWnd, &ps);
+		for (int h = 0; h <= numberLinks - 1; ++h) {
+			string str = links[h];
+
+			std::wstring stemp = std::wstring(str.begin(), str.end());
+			LPCWSTR sw = stemp.c_str();
+
+			if (h == 0) {
+				TextOut(hdc,
+					5, 5,
+					sw, _tcslen(sw));
+
+			}
+			else {
+				TextOut(hdc,
+					5, 5 + h * 25,
+					sw, _tcslen(sw));
+			}
+
+			if (h == numberLinks - 1) {
+				EndPaint(hWnd, &ps);
+			}
+
+		}
+
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
