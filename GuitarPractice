@@ -119,9 +119,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	bool strumming = true;
 
 	string tuning =  "";
-	string timing = "";
+	string timing[3] = {"64", "96", "128"};
 
-	string chordProgressions[7] = { "Em - G - Am - C", "G - Em - Am - D", "C - Am - Dm - G", "G - D - Em - C", "Am - Dm - E7 - Am", "Em - D - C - B7", "C - C7 - F - G7 - C" };
+	string chordProgressions[11] = {"C - G - Am - F", "C - Am - F - G", "Am - F - C - G", "C - F - Am - G", "Em - G - Am - C", "G - Em - Am - D", "C - Am - Dm - G", "G - D - Em - C", "Am - Dm - E7 - Am", "Em - D - C - B7", "C - C7 - F - G7 - C" };
 
 	// Sequence Length(s)
 	int sequenceLength = 9;
@@ -147,6 +147,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 	srand(seed);
 
+	// Timing
+
+
+
+	//
+
 	for (int k = 1; k <= numberLinks; ++k) {
 
 		// General 
@@ -165,7 +171,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		int actualSimulPicked = 0;
 
 		// Chord Progression
-		chordNumber = rand() % 7;
+		chordNumber = rand() % 11;
 
 		string chord = "";
 
@@ -181,77 +187,84 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		lastChordNumber = chordNumber;
 
-		for (int i = 0; i <= (sequenceLength - 1) + actualSimulPicked; ++i) {
+		// Strumming
+		if (rand() % 2 == 0 and strumming == true) {		
+			str = "Strumming: " + chord;
+		}
+		else {
+			for (int i = 0; i <= (sequenceLength - 1) + actualSimulPicked; ++i) {
 
-			currentGenerated += 1;
+				currentGenerated += 1;
 
-			// Simultaneous Picking
+				// Simultaneous Picking
 
-			if (currentSimulPicked == false) {
-				if (rand() % sequenceLength < simulPickFreq and currentSimultaneouslyPicked < maxSimultaneouslyPicked and currentGenerated < sequenceLength + actualSimulPicked) {
-					actualSimulPicked += 1;
-					currentSimulPicked = true;
-					currentSimultaneouslyPicked += 1;
-					str = str + "(";
-				}
-			}
-			else {
-				str = str + "+";
-			}
-
-			// Strings
-
-			int newInt = 1 + rand() % 6;
-			string newStr = to_string(newInt);
-
-			if (currentSimulPicked == true and simulPickPairing == true) {
-				if (newInt == lastStringNumber) {
-					int acceptableStrings[5] = { };
-					int h = 0;
-					for (int i = 1; i <= 6; ++i) {
-						if (i != lastStringNumber) {
-							acceptableStrings[h] = i;
-							h += 1;
-						}
+				if (currentSimulPicked == false) {
+					if (rand() % sequenceLength < simulPickFreq and currentSimultaneouslyPicked < maxSimultaneouslyPicked and currentGenerated < sequenceLength + actualSimulPicked) {
+						actualSimulPicked += 1;
+						currentSimulPicked = true;
+						currentSimultaneouslyPicked += 1;
+						str = str + "(";
 					}
-					newInt = acceptableStrings[rand() % 5];
-					newStr = to_string(newInt);
-				}
-			}
-
-			str = str + newStr;
-
-			lastStringNumber = newInt;
-
-			if (currentSimulPicked == true and simulPickPairing == true) {
-
-				simulPickPairing = false;
-				currentSimulPicked = false;
-				str = str + ")";
-			}
-			else if (currentSimulPicked == true and simulPickPairing == false) {
-				simulPickPairing = true;
-			}
-
-			// Details
-
-			if (currentSimulPicked == false) {
-
-				// Hammer On
-				if (rand() % sequenceLength < hammerFreq) {
-					str = str + "H";
-				}
-
-				if (currentGenerated < (sequenceLength - 1) + actualSimulPicked + 1) {
-					str = str + " - ";
 				}
 				else {
-					str = str + " ";
+					str = str + "+";
 				}
+
+				// Strings
+
+				int newInt = 1 + rand() % 6;
+				string newStr = to_string(newInt);
+
+				if (currentSimulPicked == true and simulPickPairing == true) {
+					if (newInt == lastStringNumber) {
+						int acceptableStrings[5] = { };
+						int h = 0;
+						for (int i = 1; i <= 6; ++i) {
+							if (i != lastStringNumber) {
+								acceptableStrings[h] = i;
+								h += 1;
+							}
+						}
+						newInt = acceptableStrings[rand() % 5];
+						newStr = to_string(newInt);
+					}
+				}
+
+				str = str + newStr;
+
+				lastStringNumber = newInt;
+
+				if (currentSimulPicked == true and simulPickPairing == true) {
+
+					simulPickPairing = false;
+					currentSimulPicked = false;
+					str = str + ")";
+				}
+				else if (currentSimulPicked == true and simulPickPairing == false) {
+					simulPickPairing = true;
+				}
+
+				// Details
+
+				if (currentSimulPicked == false) {
+
+					// Hammer On
+					if (rand() % sequenceLength < hammerFreq) {
+						str = str + "H";
+					}
+
+					if (currentGenerated < (sequenceLength - 1) + actualSimulPicked + 1) {
+						str = str + " - ";
+					}
+					else {
+						str = str + " ";
+					}
+				}
+
 			}
 
 		}
-	
+
 		links[k - 1] = str;
 
 	}
