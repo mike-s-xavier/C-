@@ -121,10 +121,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	string tuning =  "";
 	string timing = "";
 
-	string chords[12] = {"Em", "E", "Am", "C", "A", "G", "D", "Dm", "E7", "D7", "A7", "C7"};
+	string chordProgressions[7] = { "Em - G - Am - C", "G - Em - Am - D", "C - Am - Dm - G", "G - D - Em - C", "Am - Dm - E7 - Am", "Em - D - C - B7", "C - C7 - F - G7 - C" };
 
 	// Sequence Length(s)
-	int sequenceLength = 7;
+	int sequenceLength = 9;
 	
 	// Number of Linked Sequences
 	int numberLinks = 10;
@@ -164,23 +164,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		int actualSimulPicked = 0;
 
-		// Chord
-		if (rand() % 100 > 70) {
-			chordNumber = -1;
-		}
-		else {
-			chordNumber = rand() % 12;
-		}
+		// Chord Progression
+		chordNumber = rand() % 7;
 
 		string chord = "";
 
 		if (chordNumber != -1) {
-			chord = chords[chordNumber];
+			chord = chordProgressions[chordNumber];
 		}
 
 		if (chordNumber != lastChordNumber and currentSimulPicked == false) {
 			if (chord != "") {
-				str = str + chord + ": ";
+				str = str + chord + " : ";
 			}
 		}
 
